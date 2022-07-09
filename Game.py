@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import Callable, List, Dict
 from random import choice
 import pygame
@@ -5,31 +6,35 @@ from pygame.color import Color
 from Menu import Menu
 from colors import Colors
 from Board import Board
+from Player import Player
 
-class Game():
-    def __init__(self, screen_width, screen_height):
+@dataclass
+class Game:
+    screen_width: int
+    screen_height: int
+    font: pygame.font.Font = None
+    score: int = 0
+    game_started: bool = False
+    screen: pygame.display = None
+    running: bool = True
+    paused: bool = True
+    all_sprites: pygame.sprite.Group = pygame.sprite.Group()
+    sounds: dict = field(default_factory=dict)
+    menus: dict = field(default_factory=dict)
+    menu: Menu = None
+    menu_active: Menu = False
+    game_has_run_once: bool = False
+    background_image: pygame.image = None
+    background_color: pygame.Color = Colors.BLACK
+    dragging: bool = False
+    hot_action: Callable = None
+    board: Board = None
+    players: List[Player] = field(default_factory=list)
+    active_player_index: int = 0
+
+    def __post_init__(self):
         pygame.font.init()
         pygame.mixer.init()
-        self.font: pygame.font.Font = None
-        self.score: int = 0
-        self.game_started: bool = False
-        self.screen: pygame.display = None
-        self.screen_width = screen_width
-        self.screen_height = screen_height
-        self.running: bool = True
-        self.paused: bool = True
-        self.all_sprites: pygame.sprite.Group = pygame.sprite.Group()
-        self.sounds: dict = {}
-        self.menus: dict = {}
-        self.menu: Menu = None
-        self.menu_active: Menu = False
-        self.game_has_run_once: bool = False
-        self.background_image: pygame.image = None
-        self.background_color: pygame.Color = Colors.BLACK
-        self.dragging: bool = False
-        self.hot_action: Callable = None
-
-        self.board: Board = None
 
     def set_menu(self, menu_name):
         self.menu = self.menus[menu_name]
@@ -64,6 +69,10 @@ class Game():
         self.game_started = True
         self.paused = False
         self.game_has_run_once = True
+        p1 = Player('Bilbo', Colors.PURPLE)
+        self.players.append(p1)
+        p2 = Player('Gollum', Colors.YELLOW)
+        self.players.append(p2)
 
     def quit_game(self):
         self.running = False
@@ -101,8 +110,19 @@ class Game():
                 self.menu.menu_item_hot = None
 
             if self.board is None:
-                self.board = Board(50, 50, 5, 5)
+                self.board = Board(35, 35, 30, 30, self.font)
+                self.board.set_player(self.players[self.active_player_index])
             self.board.draw(self.screen)
+
+            x = self.screen_width - 200
+            y = 50
+            for i, p in enumerate(self.players):
+                if i == self.active_player_index:
+                    pygame.draw.ellipse(self.screen, p.color, pygame.Rect(x - 30, y + 6, 20, 20))
+                text = self.font.render(f'{p.name}: {p.score}', True, p.color)
+                self.screen.blit(text, (x, y))
+                y += 30
+
 
     def update(self):
         if self.board is not None:
@@ -112,7 +132,16 @@ class Game():
         if self.hot_action is not None:
             self.hot_action()
         else:
-            self.board.handle_click()
+            move_made, squares_completed = self.board.handle_click()
+            if squares_completed > 0:
+                self.players[self.active_player_index].score += squares_completed
+            if move_made and not squares_completed:
+                self.active_player_index += 1
+                if self.active_player_index == len(self.players):
+                    self.active_player_index = 0
+                self.board.set_player(self.players[self.active_player_index])
+                self.board.clear_available()
+                self.board.deselect_dot()
 
     def get_mouse_pos(self) -> pygame.Vector2:
         m = pygame.mouse.get_pos()

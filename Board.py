@@ -6,6 +6,7 @@ from colors import Colors
 from Dot import Dot
 from Edge import Edge, Direction
 from Square import Square
+from Player import Player
 
 class Sides(Enum):
     TOP = auto()
@@ -19,6 +20,7 @@ class Board:
     start_y: int
     dots_x: int
     dots_y: int
+    font: pygame.font.Font
     padding: int = 20
     dots: List[Dot] = field(default_factory=list)
     hot_dot: Dot = None
@@ -26,6 +28,7 @@ class Board:
     available_dots: List[Dot] = field(default_factory=list)
     edges: List[Edge] = field(default_factory=list)
     squares: List[Square] = field(default_factory=list)
+    player: Player = None
 
     def __post_init__(self):
         dx = self.start_x
@@ -57,27 +60,31 @@ class Board:
     def handle_click(self):
         self.test_edges_down = []
         self.test_edges_up = []
+        squares_completed = 0
+        move_made = False
         if self.hot_dot is None:
             if self.selected_dot is not None:
                 self.selected_dot.selected = False
                 self.selected_dot = None
                 self.set_available()
-            return
+            return move_made, squares_completed
         
         if self.selected_dot is None:
             self.selected_dot = self.hot_dot
             self.selected_dot.selected = True
+            self.set_available()
         else:
             if self.selected_dot is not self.hot_dot:
                 if self.hot_dot in self.available_dots:
-                    edge = Edge(self.selected_dot, self.hot_dot)
-                    if self.edge_is_unique(edge):
+                    edge = Edge(self.selected_dot, self.hot_dot, self.player.color)
+                    if not self.edge_exists(edge):
+                        move_made = True
                         if edge.direction == Direction.HORIZONTAL:
                             if edge.dot0.col > edge.dot1.col:
-                                edge = Edge(edge.dot1, edge.dot0)
+                                edge = Edge(edge.dot1, edge.dot0, self.player.color)
                         else:
                             if edge.dot0.row > edge.dot1.row:
-                                edge = Edge(edge.dot1, edge.dot0)
+                                edge = Edge(edge.dot1, edge.dot0, self.player.color)
                         
                         self.edges.append(edge)
                         
@@ -85,32 +92,49 @@ class Board:
                             if edge.dot0.row > 0:
                                 success, s = self.check_for_square(edge, Sides.BOTTOM)
                                 if success:
+                                    squares_completed += 1
                                     self.squares.append(s)
                             if edge.dot0.row < (self.dots_y - 1):
                                 success, s = self.check_for_square(edge, Sides.TOP)
                                 if success:
+                                    squares_completed += 1
                                     self.squares.append(s)
                         else:
                             if edge.dot0.col > 0:
                                 success, s = self.check_for_square(edge, Sides.RIGHT)
                                 if success:
+                                    squares_completed += 1
                                     self.squares.append(s)
                             if edge.dot0.col < (self.dots_y - 1):
                                 success, s = self.check_for_square(edge, Sides.LEFT)
                                 if success:
+                                    squares_completed += 1
                                     self.squares.append(s)
                     self.selected_dot.selected = False
                     self.selected_dot = self.hot_dot
                     self.selected_dot.selected = True
+                    self.set_available()
                 else:
                     self.selected_dot.selected = False
                     self.selected_dot = self.hot_dot
                     self.selected_dot.selected = True
+                    self.set_available()
             else:
                 self.selected_dot.selected = False
                 self.selected_dot = None
-        
-        self.set_available()
+                self.deselect_dot()
+
+        return move_made, squares_completed
+
+    def deselect_dot(self):
+        if self.selected_dot:
+            self.selected_dot.selected = False
+            self.selected_dot = None
+
+    def clear_available(self):
+        for dot in self.available_dots:
+            dot.available = False
+        self.available_dots = []
     
     def set_available(self):
         if self.selected_dot is None:
@@ -122,87 +146,80 @@ class Board:
                 dot.available = False
             self.available_dots = []
             r, c = self.get_row_col_from_index(self.selected_dot.index, self.dots_x)
-            index = self.selected_dot.index
             if c > 0:
                 dot = self.dots[self.get_index_from_row_col(r, c - 1, self.dots_x)]
-                dot.available = True
-                self.available_dots.append(dot)
+                self.add_to_available(dot)
             if c < (self.dots_x - 1):
                 dot = self.dots[self.get_index_from_row_col(r, c + 1, self.dots_x)]
-                dot.available = True
-                self.available_dots.append(dot)
+                self.add_to_available(dot)
             if r > 0:
                 dot = self.dots[self.get_index_from_row_col(r - 1, c, self.dots_x)]
-                dot.available = True
-                self.available_dots.append(dot)
+                self.add_to_available(dot)
             if r < (self.dots_y - 1):
                 dot = self.dots[self.get_index_from_row_col(r + 1, c, self.dots_x)]
-                dot.available = True
-                self.available_dots.append(dot)
+                self.add_to_available(dot)
+
+    def add_to_available(self, dot: Dot) -> None:
+        edge = Edge(self.selected_dot, dot, self.player.color)
+        if not self.edge_exists(edge):
+            dot.available = True
+            self.available_dots.append(dot)
     
-    def edge_is_unique(self, edge: Edge) -> bool:
+    def edge_exists(self, edge: Edge) -> bool:
         if len(self.edges) == 0:
-            return True
+            return False
         for e in self.edges:
             if (edge.dot0 == e.dot0 and edge.dot1 == e.dot1) or (edge.dot0 == e.dot1 and edge.dot1 == e.dot0):
-                return False
-        return True
+                return True
+        return False
 
-    def all_edges_exist(self, t: Edge, tr: Edge, r: Edge, rr: Edge, b: Edge, br: Edge, l: Edge, lr: Edge) -> bool:
-        return (t in self.edges or tr in self.edges) and\
-               (r in self.edges or rr in self.edges) and\
-               (b in self.edges or br in self.edges) and\
-               (l in self.edges or lr in self.edges)
+    def all_edges_exist(self, t: Edge, r: Edge, b: Edge, l: Edge) -> bool:
+        return (self.edge_exists(t) and self.edge_exists(r) and self.edge_exists(b) and self.edge_exists(l))
 
     def check_for_square(self, edge: Edge, side: Sides) -> Tuple[bool, Square]:
         if side in [Sides.TOP, Sides.BOTTOM]:
             if side == Sides.BOTTOM:
                 e_bottom = edge
-                e_bottom_rev = Edge(edge.dot1, edge.dot0)
-                e_top, e_top_rev = self.make_side_edge(edge, Sides.TOP)
+                e_top = self.make_side_edge(edge, Sides.TOP)
             else:
                 e_top = edge
-                e_top_rev = Edge(edge.dot1, edge.dot0)
-                e_bottom, e_bottom_rev = self.make_side_edge(edge, Sides.BOTTOM)
-            e_left = Edge(e_top.dot0, e_bottom.dot0)
-            e_left_rev = Edge(e_bottom.dot0, e_top.dot0)            
-            e_right = Edge(e_top.dot1, e_bottom.dot1)
-            e_right_rev = Edge(e_bottom.dot1, e_top.dot1)
+                e_bottom = self.make_side_edge(edge, Sides.BOTTOM)
+            e_left = Edge(e_top.dot0, e_bottom.dot0, self.player.color)
+            e_right = Edge(e_top.dot1, e_bottom.dot1, self.player.color)
         if side in [Sides.RIGHT, Sides.LEFT]:
             if side == Sides.RIGHT:
                 e_right = edge
-                e_right_rev = Edge(edge.dot1, edge.dot0)
-                e_left, e_left_rev = self.make_side_edge(edge, Sides.LEFT)
+                e_left = self.make_side_edge(edge, Sides.LEFT)
             else:
                 e_left = edge
-                e_left_rev = Edge(edge.dot1, edge.dot0)
-                e_right, e_right_rev = self.make_side_edge(edge, Sides.RIGHT)
-            e_top = Edge(e_left.dot0, e_right.dot0)
-            e_top_rev = Edge(e_right.dot0, e_left.dot0)
-            e_bottom = Edge(e_left.dot1, e_right.dot1)
-            e_bottom_rev = Edge(e_right.dot1, e_left.dot1)
+                e_right = self.make_side_edge(edge, Sides.RIGHT)
+            e_top = Edge(e_left.dot0, e_right.dot0, self.player.color)
+            e_bottom = Edge(e_left.dot1, e_right.dot1, self.player.color)
 
-        success = self.all_edges_exist(e_top, e_top_rev, e_right, e_right_rev, e_bottom, e_bottom_rev, e_left, e_left_rev)
+        success = self.all_edges_exist(e_top, e_right, e_bottom, e_left)
         s = None
         if success:
-            s = Square(e_top, e_right, e_bottom, e_left, self.padding)
+            s = Square(e_top, e_right, e_bottom, e_left, self.padding, self.player, self.font)
         
         return success, s
 
-    def make_side_edge(self, edge: Edge, desired_side: Sides) -> Tuple[Edge]:
+    def make_side_edge(self, opposite_edge: Edge, desired_side: Sides) -> Edge:
         if desired_side == Sides.TOP:
-            dot0 = self.dots[self.get_index_from_row_col(edge.dot0.row - 1, edge.dot0.col, self.dots_x)]
-            dot1 = self.dots[self.get_index_from_row_col(edge.dot1.row - 1, edge.dot1.col, self.dots_x)]
+            dot0 = self.dots[self.get_index_from_row_col(opposite_edge.dot0.row - 1, opposite_edge.dot0.col, self.dots_x)]
+            dot1 = self.dots[self.get_index_from_row_col(opposite_edge.dot1.row - 1, opposite_edge.dot1.col, self.dots_x)]
         elif desired_side == Sides.BOTTOM:
-            dot0 = self.dots[self.get_index_from_row_col(edge.dot0.row + 1, edge.dot0.col, self.dots_x)]
-            dot1 = self.dots[self.get_index_from_row_col(edge.dot1.row + 1, edge.dot1.col, self.dots_x)]
+            dot0 = self.dots[self.get_index_from_row_col(opposite_edge.dot0.row + 1, opposite_edge.dot0.col, self.dots_x)]
+            dot1 = self.dots[self.get_index_from_row_col(opposite_edge.dot1.row + 1, opposite_edge.dot1.col, self.dots_x)]
         elif desired_side == Sides.RIGHT:
-            dot0 = self.dots[self.get_index_from_row_col(edge.dot0.row, edge.dot0.col + 1, self.dots_x)]
-            dot1 = self.dots[self.get_index_from_row_col(edge.dot1.row, edge.dot1.col + 1, self.dots_x)]
+            dot0 = self.dots[self.get_index_from_row_col(opposite_edge.dot0.row, opposite_edge.dot0.col + 1, self.dots_x)]
+            dot1 = self.dots[self.get_index_from_row_col(opposite_edge.dot1.row, opposite_edge.dot1.col + 1, self.dots_x)]
         elif desired_side == Sides.LEFT:
-            dot0 = self.dots[self.get_index_from_row_col(edge.dot0.row, edge.dot0.col - 1, self.dots_x)]
-            dot1 = self.dots[self.get_index_from_row_col(edge.dot1.row, edge.dot1.col - 1, self.dots_x)]
-        return (Edge(dot0, dot1), Edge(dot1, dot0))
+            dot0 = self.dots[self.get_index_from_row_col(opposite_edge.dot0.row, opposite_edge.dot0.col - 1, self.dots_x)]
+            dot1 = self.dots[self.get_index_from_row_col(opposite_edge.dot1.row, opposite_edge.dot1.col - 1, self.dots_x)]
+        return Edge(dot0, dot1, self.player.color)
+
+    def set_player(self, player: Player) -> None:
+        self.player = player
 
     @staticmethod
     def get_row_col_from_index(index: int, width: int) -> Tuple[int]:

@@ -12,8 +12,9 @@ class Direction(Enum):
 class Edge:
     dot0: Dot
     dot1: Dot
+    color: pygame.Color
     direction: Direction = None
-    color: pygame.Color = Colors.CYAN
+    part_of_completed_square: bool = False
 
     def __post_init__(self):
         if self.dot0.row == self.dot1.row:
