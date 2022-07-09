@@ -1,10 +1,17 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 import pygame
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from colors import Colors
 from Dot import Dot
 from Edge import Edge, Direction
 from Square import Square
+
+class Sides(Enum):
+    TOP = auto()
+    RIGHT = auto()
+    BOTTOM = auto()
+    LEFT = auto()
 
 @dataclass
 class Board:
@@ -71,88 +78,26 @@ class Board:
                         else:
                             if edge.dot0.row > edge.dot1.row:
                                 edge = Edge(edge.dot1, edge.dot0)
+                        
                         self.edges.append(edge)
+                        
                         if edge.direction == Direction.HORIZONTAL:
                             if edge.dot0.row > 0:
-                                e_bottom = edge
-                                
-                                dot0_up = self.dots[self.get_index_from_row_col(e_bottom.dot0.row - 1, e_bottom.dot0.col, self.dots_x)]
-                                dot1_up = self.dots[self.get_index_from_row_col(e_bottom.dot1.row - 1, e_bottom.dot1.col, self.dots_x)]
-                                
-                                e_top = Edge(dot0_up, dot1_up)
-                                e_top_rev = Edge(dot1_up, dot0_up)
-                                
-                                e_left = Edge(e_top.dot0, e_bottom.dot0)
-                                e_left_rev = Edge(e_bottom.dot0, e_top.dot0)
-                                
-                                e_right = Edge(e_top.dot1, e_bottom.dot1)
-                                e_right_rev = Edge(e_bottom.dot1, e_top.dot1)
-                                
-                                if (e_top in self.edges or e_top_rev in self.edges) and\
-                                   (e_left in self.edges or e_left_rev in self.edges) and\
-                                   (e_right in self.edges or e_right_rev in self.edges):
-                                    s = Square(e_top, e_right, e_bottom, e_left, self.padding)
+                                success, s = self.check_for_square(edge, Sides.BOTTOM)
+                                if success:
                                     self.squares.append(s)
                             if edge.dot0.row < (self.dots_y - 1):
-                                e_top = edge
-                                
-                                dot0_down = self.dots[self.get_index_from_row_col(e_top.dot0.row + 1, e_top.dot0.col, self.dots_x)]
-                                dot1_down = self.dots[self.get_index_from_row_col(e_top.dot1.row + 1, e_top.dot1.col, self.dots_x)]
-                                
-                                e_bottom = Edge(dot0_down, dot1_down)
-                                e_bottom_rev = Edge(dot1_down, dot0_down)
-                                
-                                e_left = Edge(e_top.dot0, e_bottom.dot0)
-                                e_left_rev = Edge(e_bottom.dot0, e_top.dot0)
-                                
-                                e_right = Edge(e_top.dot1, e_bottom.dot1)
-                                e_right_rev = Edge(e_bottom.dot1, e_top.dot1)
-                                
-                                if (e_bottom in self.edges or e_bottom_rev in self.edges) and\
-                                   (e_left in self.edges or e_left_rev in self.edges) and\
-                                   (e_right in self.edges or e_right_rev in self.edges):
-                                    s = Square(e_top, e_right, e_bottom, e_left, self.padding)
+                                success, s = self.check_for_square(edge, Sides.TOP)
+                                if success:
                                     self.squares.append(s)
                         else:
                             if edge.dot0.col > 0:
-                                e_right = edge
-                                
-                                dot0_left = self.dots[self.get_index_from_row_col(e_right.dot0.row, e_right.dot0.col - 1, self.dots_x)]
-                                dot1_left = self.dots[self.get_index_from_row_col(e_right.dot1.row, e_right.dot1.col - 1, self.dots_x)]
-                                
-                                e_left = Edge(dot0_left, dot1_left)
-                                e_left_rev = Edge(dot1_left, dot0_left)
-                                
-                                e_top = Edge(e_left.dot0, e_right.dot0)
-                                e_top_rev = Edge(e_right.dot0, e_left.dot0)
-
-                                e_bottom = Edge(e_left.dot1, e_right.dot1)
-                                e_bottom_rev = Edge(e_right.dot1, e_left.dot1)
-                                
-                                if (e_top in self.edges or e_top_rev in self.edges) and\
-                                   (e_left in self.edges or e_left_rev in self.edges) and\
-                                   (e_bottom in self.edges or e_bottom_rev in self.edges):
-                                    s = Square(e_top, e_right, e_bottom, e_left, self.padding)
+                                success, s = self.check_for_square(edge, Sides.RIGHT)
+                                if success:
                                     self.squares.append(s)
                             if edge.dot0.col < (self.dots_y - 1):
-                                e_left = edge
-                                
-                                dot0_right = self.dots[self.get_index_from_row_col(e_left.dot0.row, e_left.dot0.col + 1, self.dots_x)]
-                                dot1_right = self.dots[self.get_index_from_row_col(e_left.dot1.row, e_left.dot1.col + 1, self.dots_x)]
-                                
-                                e_right = Edge(dot0_right, dot1_right)
-                                e_right_rev = Edge(dot1_right, dot0_right)
-                                
-                                e_top = Edge(e_left.dot0, e_right.dot0)
-                                e_top_rev = Edge(e_right.dot0, e_left.dot0)
-
-                                e_bottom = Edge(e_left.dot1, e_right.dot1)
-                                e_bottom_rev = Edge(e_right.dot1, e_left.dot1)
-                                
-                                if (e_top in self.edges or e_top_rev in self.edges) and\
-                                   (e_right in self.edges or e_right_rev in self.edges) and\
-                                   (e_bottom in self.edges or e_bottom_rev in self.edges):
-                                    s = Square(e_top, e_right, e_bottom, e_left, self.padding)
+                                success, s = self.check_for_square(edge, Sides.LEFT)
+                                if success:
                                     self.squares.append(s)
                     self.selected_dot.selected = False
                     self.selected_dot = self.hot_dot
@@ -202,6 +147,62 @@ class Board:
             if (edge.dot0 == e.dot0 and edge.dot1 == e.dot1) or (edge.dot0 == e.dot1 and edge.dot1 == e.dot0):
                 return False
         return True
+
+    def all_edges_exist(self, t: Edge, tr: Edge, r: Edge, rr: Edge, b: Edge, br: Edge, l: Edge, lr: Edge) -> bool:
+        return (t in self.edges or tr in self.edges) and\
+               (r in self.edges or rr in self.edges) and\
+               (b in self.edges or br in self.edges) and\
+               (l in self.edges or lr in self.edges)
+
+    def check_for_square(self, edge: Edge, side: Sides) -> Tuple[bool, Square]:
+        if side in [Sides.TOP, Sides.BOTTOM]:
+            if side == Sides.BOTTOM:
+                e_bottom = edge
+                e_bottom_rev = Edge(edge.dot1, edge.dot0)
+                e_top, e_top_rev = self.make_side_edge(edge, Sides.TOP)
+            else:
+                e_top = edge
+                e_top_rev = Edge(edge.dot1, edge.dot0)
+                e_bottom, e_bottom_rev = self.make_side_edge(edge, Sides.BOTTOM)
+            e_left = Edge(e_top.dot0, e_bottom.dot0)
+            e_left_rev = Edge(e_bottom.dot0, e_top.dot0)            
+            e_right = Edge(e_top.dot1, e_bottom.dot1)
+            e_right_rev = Edge(e_bottom.dot1, e_top.dot1)
+        if side in [Sides.RIGHT, Sides.LEFT]:
+            if side == Sides.RIGHT:
+                e_right = edge
+                e_right_rev = Edge(edge.dot1, edge.dot0)
+                e_left, e_left_rev = self.make_side_edge(edge, Sides.LEFT)
+            else:
+                e_left = edge
+                e_left_rev = Edge(edge.dot1, edge.dot0)
+                e_right, e_right_rev = self.make_side_edge(edge, Sides.RIGHT)
+            e_top = Edge(e_left.dot0, e_right.dot0)
+            e_top_rev = Edge(e_right.dot0, e_left.dot0)
+            e_bottom = Edge(e_left.dot1, e_right.dot1)
+            e_bottom_rev = Edge(e_right.dot1, e_left.dot1)
+
+        success = self.all_edges_exist(e_top, e_top_rev, e_right, e_right_rev, e_bottom, e_bottom_rev, e_left, e_left_rev)
+        s = None
+        if success:
+            s = Square(e_top, e_right, e_bottom, e_left, self.padding)
+        
+        return success, s
+
+    def make_side_edge(self, edge: Edge, desired_side: Sides) -> Tuple[Edge]:
+        if desired_side == Sides.TOP:
+            dot0 = self.dots[self.get_index_from_row_col(edge.dot0.row - 1, edge.dot0.col, self.dots_x)]
+            dot1 = self.dots[self.get_index_from_row_col(edge.dot1.row - 1, edge.dot1.col, self.dots_x)]
+        elif desired_side == Sides.BOTTOM:
+            dot0 = self.dots[self.get_index_from_row_col(edge.dot0.row + 1, edge.dot0.col, self.dots_x)]
+            dot1 = self.dots[self.get_index_from_row_col(edge.dot1.row + 1, edge.dot1.col, self.dots_x)]
+        elif desired_side == Sides.RIGHT:
+            dot0 = self.dots[self.get_index_from_row_col(edge.dot0.row, edge.dot0.col + 1, self.dots_x)]
+            dot1 = self.dots[self.get_index_from_row_col(edge.dot1.row, edge.dot1.col + 1, self.dots_x)]
+        elif desired_side == Sides.LEFT:
+            dot0 = self.dots[self.get_index_from_row_col(edge.dot0.row, edge.dot0.col - 1, self.dots_x)]
+            dot1 = self.dots[self.get_index_from_row_col(edge.dot1.row, edge.dot1.col - 1, self.dots_x)]
+        return (Edge(dot0, dot1), Edge(dot1, dot0))
 
     @staticmethod
     def get_row_col_from_index(index: int, width: int) -> Tuple[int]:
