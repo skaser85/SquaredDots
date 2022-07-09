@@ -101,7 +101,7 @@ class Game():
                 self.menu.menu_item_hot = None
 
             if self.board is None:
-                self.board = Board(100, 100, 20, 20)
+                self.board = Board(50, 50, 5, 5)
             self.board.draw(self.screen)
 
     def update(self):

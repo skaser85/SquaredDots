@@ -6,6 +6,9 @@ from colors import Colors
 
 @dataclass
 class Dot:
+    index: int
+    row: int
+    col: int
     pos: pygame.Vector2
     size: int = 20
     color: pygame.Color = Colors.CYAN
@@ -18,7 +21,8 @@ class Dot:
     anim_timer: int = 255
     anim_speed: int = 10
     anim_start_color: pygame.Color = Colors.GREEN
-    anim_target_color: pygame.Color = Colors.YELLOW
+    anim_target_color: pygame.Color = Colors.PURPLE
+    available: bool = False
 
     def __post_init__(self):
         self.rect = pygame.Rect(self.pos.x, self.pos.y, self.size, self.size)
@@ -37,6 +41,8 @@ class Dot:
             lerp_amt = self.anim_timer / self.anim_duration
             c = Colors.copy(self.anim_start_color).lerp(self.anim_target_color, lerp_amt)
             pygame.draw.ellipse(screen, c, self.rect, 0)
+        elif self.available and not self.selected:
+            pygame.draw.ellipse(screen, Colors.PINK, self.rect, 0)
         pygame.draw.ellipse(screen, self.color, self.rect, self.stroke_width)
 
     def update(self, m: pygame.Vector2):
