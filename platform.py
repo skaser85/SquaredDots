@@ -7,19 +7,25 @@ from pygame.constants import MOUSEBUTTONDOWN, MOUSEMOTION, RESIZABLE, VIDEORESIZ
 # Import pygame.locals for easier access to key coordinates
 from pygame.locals import (
     K_ESCAPE,
+    K_BACKSPACE,
     K_SPACE,
     K_RETURN,
+    K_LSHIFT,
+    K_LCTRL,
+    K_LALT,
     K_UP,
     K_DOWN,
     K_LEFT,
     K_RIGHT,
     KEYUP,
+    KEYDOWN,
     MOUSEBUTTONUP,
     QUIT
 )
 
 # Import custom objects
 from Game import Game
+from font import FontUseType
 from colors import Colors
 
 # Initialize pygame
@@ -35,7 +41,9 @@ game.screen = pygame.display.set_mode((gameWidth, gameHeight),RESIZABLE)
 
 # register assets
 assets_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'assets'))
-game.register_font(os.path.join(assets_path, 'Fonts', 'kenvector_future_thin.ttf'), 28)
+game.register_font(os.path.join(assets_path, 'Fonts', 'kenvector_future_thin.ttf'), 28, FontUseType.DEFAULT)
+game.register_font(os.path.join(assets_path, 'Fonts', 'kenvector_future_thin.ttf'), 28, FontUseType.MENU)
+game.register_sys_font('consolas', 12, FontUseType.UI)
 game.set_background_color(Colors.DARK_GREY)
 
 # create menus
@@ -61,6 +69,17 @@ while game.running:
     # Look at every event in the game
     for event in pygame.event.get():
         # Did the user hit a key?
+        if event.type == KEYDOWN:
+            if event.key == K_BACKSPACE:
+                game.update(K_BACKSPACE)
+            elif event.key in [K_LALT, K_LCTRL, K_LSHIFT]:
+                ...
+            elif event.key == K_RETURN:
+                game.update(K_RETURN)
+            elif event.key == K_SPACE:
+                game.update(K_SPACE)
+            else:
+                game.update(event.unicode)
         if event.type == KEYUP:
             # Was it the Escape key? If so, stop the loop.
             if event.key == K_ESCAPE:
@@ -75,7 +94,7 @@ while game.running:
                         game.pause_game()
             elif event.key == K_SPACE:
                 if game.game_started and (not game.paused):
-                    pass
+                    ...
             elif event.key == K_RETURN:
                 if game.menu.menu_item_hot is not None:
                     game.menu.menu_item_hot.action()
