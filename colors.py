@@ -54,3 +54,7 @@ class Colors:
     @classmethod
     def get_colors(cls) -> List[str]:
         return [c.default for c in fields(cls)]
+
+    @classmethod
+    def get_color_by_name(cls, name: str) -> Color:
+        return [c for c in cls.get_colors() if c.name == name][0]

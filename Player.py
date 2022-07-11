@@ -1,9 +1,16 @@
+from __future__ import annotations
 from typing import Callable, Dict
 import pygame
 from dataclasses import dataclass
 from colors import Color
 from Button import Button
-from Input import Input
+
+@dataclass
+class InputData:
+    input_type: str
+    input_title: str
+    initial_value: str
+    player: Player
 
 @dataclass
 class Player:
@@ -35,17 +42,7 @@ class Player:
         self.active = is_active
 
     def change_name(self) -> Dict[str, str]:
-        return {
-            'input_type': 'text',
-            'input_title': 'Change Name',
-            'initial_value': self.name,
-            'player': self
-        }
+        return InputData('text', 'Change Name', self.name, self)
 
     def change_color(self) -> Dict[str, str]:
-        return {
-            'input_type': 'color',
-            'input_title': 'Change Color',
-            'initial_value': self.color.name,
-            'player': self
-        }
+        return InputData('color', 'Change Color', self.color.name, self)

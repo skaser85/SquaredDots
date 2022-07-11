@@ -8,8 +8,6 @@ class MenuItem():
     font: pygame.font.Font
     txt: str
     action: Callable
-    color: Color = Colors.WHITE
-    hot_color: Color = Colors.YELLOW
     is_hot: bool = False
 
 # Define Menu class
@@ -17,10 +15,16 @@ class MenuItem():
 class Menu():
     font: pygame.font.Font
     menu_items: List[MenuItem] = field(default_factory=list)
-    menu_item_offset = 0
-    menu_item_gap = 50
-    menu_item_hot = None
-    menu_item_hot_index = 0
+    menu_item_gap: int = 50
+    menu_item_hot: MenuItem = None
+    menu_item_hot_index: int = 0
+    menu_item_color: Color = Colors.WHITE
+    menu_item_hot_color: Color = Colors.YELLOW
+    anim_duration: int = 255
+    anim_timer: int = 255
+    anim_speed: int = 10
+    anim_start_color: Color = Colors.WHITE
+    anim_target_color: Color = Colors.YELLOW
 
     def get_hot_item(self) -> MenuItem:
         return self.menu_item_hot
@@ -55,7 +59,7 @@ class Menu():
         hot_action = None
         
         screen_width, screen_height = surface.get_size()
-        text = self.font.render(self.menu_items[0].txt, True, self.menu_items[0].color.color)
+        text = self.font.render(self.menu_items[0].txt, True, self.menu_item_color.color)
         text_height = text.get_height()
         sum_text_height = text_height * len(self.menu_items)
         sum_gaps_height = self.menu_item_gap * (len(self.menu_items) - 1)
@@ -64,7 +68,7 @@ class Menu():
         
         for idx, item in enumerate(self.menu_items):
             y_offset = y_start + (self.menu_item_gap * idx)
-            text = self.font.render(item.txt, True, item.color.color)
+            text = self.font.render(item.txt, True, self.menu_item_color.color)
             tw, th = text.get_size()
             tx = screen_width / 2 - tw / 2
             ty = y_offset
@@ -73,7 +77,18 @@ class Menu():
                 was_hot_r = r
             item.is_hot = self._mouse_is_over(r, m)
             if item.is_hot:
-                text = self.font.render(item.txt, True, item.hot_color.color)
+                
+                self.anim_timer -= self.anim_speed
+                self.anim_timer = max(self.anim_timer, 0)
+                if self.anim_timer == 0:
+                    self.anim_timer = self.anim_duration
+                    temp = Color.copy(self.anim_start_color)
+                    self.anim_start_color = Color.copy(self.anim_target_color)
+                    self.anim_target_color = temp
+                lerp_amt = self.anim_timer / self.anim_duration
+                c = Color.copy(self.anim_start_color).color.lerp(self.anim_target_color.color, lerp_amt)
+
+                text = self.font.render(item.txt, True, c)
                 hot_action = item.action
                 if self.menu_item_hot is None:
                     self.menu_item_hot = item
@@ -84,11 +99,13 @@ class Menu():
                         self.menu_item_hot = item
                         self.menu_item_hot_index = idx
             surface.blit(text, (tx, ty))
+
         if hot_action is None:
-            text = self.font.render(self.menu_item_hot.txt, True, self.menu_item_hot.hot_color.color)
+            text = self.font.render(self.menu_item_hot.txt, True, self.menu_item_hot_color.color)
             surface.blit(text, (was_hot_r.left, was_hot_r.top))
             hot_action = self.menu_item_hot.action
             self.menu_item_hot.is_hot = True
+
         return hot_action
 
     def _mouse_is_over(self, r: pygame.Rect, m: pygame.Vector2) -> bool:

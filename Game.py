@@ -5,9 +5,9 @@ from font import FontStore, FontUseType, _Font, _SysFont
 from Menu import Menu
 from colors import Colors, Color
 from Board import Board
-from Player import Player
+from Player import InputData, Player
 from Input import Input
-from Dropdown import Dropdown
+from Dropdown import Dropdown, DropdownData
 
 @dataclass
 class Game:
@@ -172,16 +172,20 @@ class Game:
     def handle_click(self):
         if self.hot_action is not None:
             value = self.hot_action()
-            if value is not None:
-                if value['input_type'] == 'text':
-                    self._input = Input(self.font_store.ui.font, value['input_title'], value['initial_value'])
-                    self.player_to_change = value['player']
-                elif value['input_type'] == 'color':
-                    self._input = Dropdown(self.font_store.ui.font, value['input_title'], self._color_names)
-                    self._input.set_value(value['initial_value'])
-                    self.player_to_change = value['player']
+            if isinstance(value, InputData):
+                if value.input_type == 'text':
+                    self._input = Input(self.font_store.ui.font, value.input_title, value.initial_value)
+                    self.player_to_change = value.player
+                elif value.input_type == 'color':
+                    self._input = Dropdown(self.font_store.ui.font, value.input_title, self._color_names)
+                    self._input.set_value(value.initial_value)
+                    self.player_to_change = value.player
                 else:
                     ...
+            if isinstance(value, DropdownData):
+                self.player_to_change.color = value.color
+                self.player_to_change = None
+                self._input = None
             self.hot_action = None
         else:
             move_made, squares_completed = self.board.handle_click()
