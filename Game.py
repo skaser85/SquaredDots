@@ -3,25 +3,11 @@ from typing import Any, Callable, List, Any
 import pygame
 from font import FontStore, FontUseType, _Font, _SysFont
 from Menu import Menu
-from colors import Colors
+from colors import Colors, Color
 from Board import Board
 from Player import Player
 from Input import Input
-
-# Import pygame.locals for easier access to key coordinates
-from pygame.locals import (
-    K_ESCAPE,
-    K_BACKSPACE,
-    K_SPACE,
-    K_RETURN,
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    KEYUP,
-    MOUSEBUTTONUP,
-    QUIT
-)
+from Dropdown import Dropdown
 
 @dataclass
 class Game:
@@ -40,7 +26,7 @@ class Game:
     menu_active: Menu = False
     game_has_run_once: bool = False
     background_image: pygame.image = None
-    background_color: pygame.Color = Colors.BLACK
+    background_color: Color = Colors.BLACK
     dragging: bool = False
     hot_action: Callable = None
     board: Board = None
@@ -48,17 +34,19 @@ class Game:
     active_player_index: int = 0
     _input: Input = None
     player_to_change: Player = None
+    _color_names: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         pygame.font.init()
         pygame.mixer.init()
+        self._color_names = Colors.get_color_names()
 
     def set_menu(self, menu_name):
         self.menu = self.menus[menu_name]
         self.menu_item_hot = self.menu.menu_items[self.menu.menu_item_hot_index]
 
     def create_menu(self, name):
-        self.menus[name] = Menu(self.screen, self.font_store.menu.font)
+        self.menus[name] = Menu(self.font_store.menu.font)
 
     def register_sound(self, name, path, volume=0.3):
         if name not in self.sounds.keys():
@@ -129,25 +117,26 @@ class Game:
     def draw(self):
         # clear the screen
         if self.background_image is None:
-            self.screen.fill(self.background_color)
+            self.screen.fill(self.background_color.color)
         else:
             self.screen.blit(self.background_image, (0, 0))
+
+        self.hot_action = None
+        m = self.get_mouse_pos()
 
         # if we're paused or the game hasn't started yet,
         # then update and draw the menu
         if self.paused or not self.game_started:
             self.menu_active = True
-            self.menu.update()
-            self.menu.draw()
+            action = self.menu.draw(self.screen, m)
+            if action is not None:
+                self.hot_action = action
         else: 
             # draw the game
             if self.menu_active:
                 self.menu_active = False
                 self.menu.reset()
                 self.menu.menu_item_hot = None
-
-            self.hot_action = None
-            m = self.get_mouse_pos()
 
             if self.board is None:
                 self.board = Board(35, 35, 30, 30, self.font_store.default.font)
@@ -188,7 +177,9 @@ class Game:
                     self._input = Input(self.font_store.ui.font, value['input_title'], value['initial_value'])
                     self.player_to_change = value['player']
                 elif value['input_type'] == 'color':
-                    ...
+                    self._input = Dropdown(self.font_store.ui.font, value['input_title'], self._color_names)
+                    self._input.set_value(value['initial_value'])
+                    self.player_to_change = value['player']
                 else:
                     ...
             self.hot_action = None

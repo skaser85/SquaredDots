@@ -1,13 +1,14 @@
 from typing import Callable, Dict
 import pygame
 from dataclasses import dataclass
+from colors import Color
 from Button import Button
 from Input import Input
 
 @dataclass
 class Player:
     name: str
-    color: pygame.Color
+    color: Color
     score: int = 0
     active: bool = False
 
@@ -15,7 +16,7 @@ class Player:
         hot_action = None
         # draw dot to show if it's this player's turn
         if self.active:
-            pygame.draw.ellipse(surface, self.color, pygame.Rect(x - 30, y + 6, 20, 20))
+            pygame.draw.ellipse(surface, self.color.color, pygame.Rect(x - 30, y + 6, 20, 20))
         # draw buttons
         change_name_btn = Button('Change Name', self.change_name, ui_font)
         change_name_btn.draw(surface, x, y - 10, m)
@@ -26,7 +27,7 @@ class Player:
         if change_color_btn.hovered:
             hot_action = change_color_btn.action
         # draw player's name
-        text = default_font.render(f'{self.name}: {self.score}', True, self.color)
+        text = default_font.render(f'{self.name}: {self.score}', True, self.color.color)
         surface.blit(text, (x, y))
         return hot_action
 
@@ -41,5 +42,10 @@ class Player:
             'player': self
         }
 
-    def change_color(self) -> None:
-        print(f'Change color button pressed from {self.name}')
+    def change_color(self) -> Dict[str, str]:
+        return {
+            'input_type': 'color',
+            'input_title': 'Change Color',
+            'initial_value': self.color.name,
+            'player': self
+        }

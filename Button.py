@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable, Tuple
 import pygame
 from dataclasses import dataclass
-from colors import Colors
+from colors import Colors, Color
 
 @dataclass
 class Button:
@@ -10,14 +10,14 @@ class Button:
     action: Callable
     font: pygame.font.Font
     draw_text_only: bool = True
-    text_color: pygame.Color = Colors.WHITE
-    bkg_color: pygame.Color = None
+    text_color: Color = Colors.WHITE
+    bkg_color: Color = None
     padding: int = 10
     rect: pygame.Rect = None
     hovered: bool = False
 
     def draw(self, surface: pygame.Surface, x: int, y: int, m: pygame.Vector2):
-        text = self.font.render(self.text, True, self.text_color)
+        text = self.font.render(self.text, True, self.text_color.color)
         tw, th = text.get_size()
         tx = x
         ty = y
@@ -31,9 +31,9 @@ class Button:
             r = pygame.Rect(x, y, tw, th)
             self.hovered = self._mouse_is_over(r, m)
         if self.hovered:
-            text = self.font.render(self.text, True, Colors.CYAN)
+            text = self.font.render(self.text, True, Colors.CYAN.color)
         if not self.draw_text_only:
-            pygame.draw.rect(surface, self.bkg_color, self.rect)
+            pygame.draw.rect(surface, self.bkg_color.color, self.rect)
             tx = x + self.padding
             ty = y + self.padding
         surface.blit(text, (tx, ty))

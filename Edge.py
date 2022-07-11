@@ -2,7 +2,7 @@ import pygame
 from dataclasses import dataclass
 from enum import Enum, auto
 from Dot import Dot
-from colors import Colors
+from colors import Color
 
 class Direction(Enum):
     VERTICAL = auto()
@@ -12,7 +12,7 @@ class Direction(Enum):
 class Edge:
     dot0: Dot
     dot1: Dot
-    color: pygame.Color
+    color: Color
     direction: Direction = None
     part_of_completed_square: bool = False
 
@@ -25,4 +25,4 @@ class Edge:
             raise ValueError('Cannot determine direction of Edge!')
 
     def draw(self, surface: pygame.surface):
-        pygame.draw.line(surface, self.color, self.dot0.rect.center, self.dot1.rect.center)
+        pygame.draw.line(surface, self.color.color, self.dot0.rect.center, self.dot1.rect.center)

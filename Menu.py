@@ -1,67 +1,38 @@
-from typing import Any, Tuple
+from typing import List, Callable
+from dataclasses import dataclass, field
 import pygame
+from colors import Colors, Color
 
-Color = Tuple[int, int, int]
-BLACK: Color = (0,0,0)
-WHITE: Color = (255,255,255)
-YELLOW: Color = (255, 255, 0)
-
-class Menu_Item():
-    def __init__(self, font, txt, action):
-        self.font = font
-        self.txt = txt
-        self.action = action
-        self.color = WHITE
-        self.rendered_text = self.font.render(self.txt, True, self.color)
-        self.rendered_rect = None
-        self.is_hot = False
-        self.x = 0
-        self.y = 0
-
-    def set_rendered_text(self):
-        self.rendered_text = self.font.render(self.txt, True, self.color)
-
-    def set_hot(self):
-        self.is_hot = True
-        self.color = YELLOW
-
-    def unset_hot(self):
-        self.is_hot = False
-        self.color = WHITE
-
-    def update(self, screen_width, screen_height, y_start):
-        rt_x, rt_y = self.rendered_text.get_size()
-        self.x = (screen_width/2) - (rt_x/2)
-        self.y = y_start
-        w = self.rendered_text.get_rect().width
-        h = self.rendered_text.get_rect().height
-        mx, my = pygame.mouse.get_pos()
-        if mx > self.x and mx < self.x + w and my > self.y and my < self.y + h:
-            self.set_hot()
+@dataclass
+class MenuItem():
+    font: pygame.font.Font
+    txt: str
+    action: Callable
+    color: Color = Colors.WHITE
+    hot_color: Color = Colors.YELLOW
+    is_hot: bool = False
 
 # Define Menu class
+@dataclass
 class Menu():
-    def __init__(self, screen, font):
-        self.screen = screen
-        self.screen_width = self.screen.get_width()
-        self.screen_height = self.screen.get_height()
-        self.font = font
-        self.menu_items = []
-        self.menu_item_offset = 0
-        self.menu_item_gap = 50
-        self.menu_item_hot = None
-        self.menu_item_hot_index = 0
+    font: pygame.font.Font
+    menu_items: List[MenuItem] = field(default_factory=list)
+    menu_item_offset = 0
+    menu_item_gap = 50
+    menu_item_hot = None
+    menu_item_hot_index = 0
 
-    def get_hot_item(self):
+    def get_hot_item(self) -> MenuItem:
         return self.menu_item_hot
 
-    def add_menu_item(self, txt, action):
-        self.menu_items.append(Menu_Item(self.font, txt, action))
+    def add_menu_item(self, txt: str, action: Callable) -> None:
+        mi = MenuItem(self.font, txt, action)
+        self.menu_items.append(mi)
         if self.menu_item_hot is None:
             self.menu_item_hot = self.menu_items[0]
-            self.menu_items[0].set_hot()
+            self.menu_items[0].is_hot = True
 
-    def select_menu_item(self, direction):
+    def select_menu_item(self, direction: int) -> None:
         if direction < 0 and self.menu_item_hot == self.menu_items[0]:
             return
         if direction > 0 and self.menu_item_hot == self.menu_items[-1]:
@@ -69,37 +40,56 @@ class Menu():
         else:
              self.menu_item_hot_index += direction
              if self.menu_item_hot is not None:
-                 self.menu_item_hot.unset_hot()
+                 self.menu_item_hot.is_hot = False
              self.menu_item_hot = self.menu_items[self.menu_item_hot_index]
-             self.menu_item_hot.set_hot()
+             self.menu_item_hot.is_hot = True
 
-    def update(self):
-        text_height = self.menu_items[0].rendered_text.get_height()
+    def reset(self):
+        self.menu_item_hot_index = 0
+        if self.menu_item_hot:
+            self.menu_item_hot.is_hot = False
+        self.menu_item_hot = self.menu_items[self.menu_item_hot_index]
+        self.menu_item_hot.is_hot = True
+    
+    def draw(self, surface: pygame.Surface, m: pygame.Vector2) -> Callable|None:
+        hot_action = None
+        
+        screen_width, screen_height = surface.get_size()
+        text = self.font.render(self.menu_items[0].txt, True, self.menu_items[0].color.color)
+        text_height = text.get_height()
         sum_text_height = text_height * len(self.menu_items)
         sum_gaps_height = self.menu_item_gap * (len(self.menu_items) - 1)
         total_height = sum_text_height + sum_gaps_height
-        y_start = (self.screen_height/2) - (total_height/2)
+        y_start = (screen_height/2) - (total_height/2)
+        
         for idx, item in enumerate(self.menu_items):
             y_offset = y_start + (self.menu_item_gap * idx)
-            item.update(self.screen_width, self.screen_height, y_offset)
-            item.set_rendered_text()
+            text = self.font.render(item.txt, True, item.color.color)
+            tw, th = text.get_size()
+            tx = screen_width / 2 - tw / 2
+            ty = y_offset
+            r = pygame.Rect(tx, ty, tw, th)
             if item.is_hot:
+                was_hot_r = r
+            item.is_hot = self._mouse_is_over(r, m)
+            if item.is_hot:
+                text = self.font.render(item.txt, True, item.hot_color.color)
+                hot_action = item.action
                 if self.menu_item_hot is None:
                     self.menu_item_hot = item
                     self.menu_item_hot_index = idx
                 else:
                     if self.menu_item_hot != item:
-                        self.menu_item_hot.unset_hot()
+                        self.menu_item_hot.is_hot = False
                         self.menu_item_hot = item
                         self.menu_item_hot_index = idx
+            surface.blit(text, (tx, ty))
+        if hot_action is None:
+            text = self.font.render(self.menu_item_hot.txt, True, self.menu_item_hot.hot_color.color)
+            surface.blit(text, (was_hot_r.left, was_hot_r.top))
+            hot_action = self.menu_item_hot.action
+            self.menu_item_hot.is_hot = True
+        return hot_action
 
-    def reset(self):
-        self.menu_item_hot_index = 0
-        if self.menu_item_hot:
-            self.menu_item_hot.unset_hot()
-        self.menu_item_hot = self.menu_items[self.menu_item_hot_index]
-        self.menu_item_hot.set_hot()
-    
-    def draw(self):
-        for item in self.menu_items:
-            self.screen.blit(item.rendered_text, (item.x, item.y))
+    def _mouse_is_over(self, r: pygame.Rect, m: pygame.Vector2) -> bool:
+        return r.collidepoint(m.x, m.y)

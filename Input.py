@@ -1,8 +1,7 @@
-from math import fabs
 from typing import Callable, Any
 import pygame
 from dataclasses import dataclass
-from colors import Colors
+from colors import Colors, Color
 
 # Import pygame.locals for easier access to key coordinates
 from pygame.locals import (
@@ -18,26 +17,26 @@ class Input:
     text: str = ''
     width: int = 150
     height: int = 30
-    text_color: pygame.Color = Colors.WHITE
-    bkg_color: pygame.Color = Colors.brighten(Colors.DARK_GREY, 0.5)
+    text_color: Color = Colors.WHITE
+    bkg_color: Color = Color.brighten(Colors.DARK_GREY, 0.5)
     padding: int = 10
     hovered: bool = False
     active: bool = True
     anim_duration: int = 255
     anim_timer: int = 255
     anim_speed: int = 10
-    anim_start_color: pygame.Color = None
-    anim_target_color: pygame.Color = None
+    anim_start_color: Color = None
+    anim_target_color: Color = None
 
     def draw(self, surface: pygame.Surface, x: int, y: int, m: pygame.Vector2) -> Callable|None:
         hot_action = None
 
-        title = self.font.render(self.title, True, self.text_color)
+        title = self.font.render(self.title, True, self.text_color.color)
         surface.blit(title, (x, y))
 
         y += 15
 
-        text = self.font.render(self.text, True, self.text_color)
+        text = self.font.render(self.text, True, self.text_color.color)
         
         tw, th = text.get_size()
         
@@ -50,11 +49,11 @@ class Input:
         
         self.hovered = self._mouse_is_over(r, m)
         if self.hovered:
-            bkg_color = Colors.brighten(self.bkg_color, 0.5)
+            bkg_color = Color.brighten(self.bkg_color, 0.5)
             hot_action = self.set_active
         
-        pygame.draw.rect(surface, bkg_color, r)
-        pygame.draw.rect(surface, self.text_color, r, 1)
+        pygame.draw.rect(surface, bkg_color.color, r)
+        pygame.draw.rect(surface, self.text_color.color, r, 1)
         
         tx = x + self.padding/2
         ty = y + self.padding/2 + th/2 - 2
@@ -72,11 +71,11 @@ class Input:
             self.anim_timer = max(self.anim_timer, 0)
             if self.anim_timer == 0:
                 self.anim_timer = self.anim_duration
-                temp = Colors.copy(self.anim_start_color)
-                self.anim_start_color = Colors.copy(self.anim_target_color)
+                temp = Color.copy(self.anim_start_color)
+                self.anim_start_color = Color.copy(self.anim_target_color)
                 self.anim_target_color = temp
             lerp_amt = self.anim_timer / self.anim_duration
-            c = Colors.copy(self.anim_start_color).lerp(self.anim_target_color, lerp_amt)
+            c = Color.copy(self.anim_start_color).color.lerp(self.anim_target_color.color, lerp_amt)
             pygame.draw.line(surface, c, (cursor_x, cursor_y), (cursor_x, r.bottom - self.padding/1.5))
 
         return hot_action

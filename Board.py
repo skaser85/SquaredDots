@@ -2,7 +2,7 @@ from typing import List, Tuple, Union
 import pygame
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from colors import Colors
+from colors import Colors, Color
 from Dot import Dot
 from Edge import Edge, Direction
 from Square import Square
