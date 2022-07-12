@@ -162,12 +162,13 @@ class Game:
         if self.board is not None:
             self.board.update(self.get_mouse_pos())
         if self._input is not None:
-            if key is not None:
-                text = self._input.update_text(key)
-                if text is not None:
-                    self.player_to_change.name = text
-                    self.player_to_change = None
-                    self._input = None
+            if isinstance(self._input, Input):
+                if key is not None:
+                    text = self._input.update_text(key)
+                    if text is not None:
+                        self.player_to_change.name = text
+                        self.player_to_change = None
+                        self._input = None
     
     def handle_click(self):
         if self.hot_action is not None:

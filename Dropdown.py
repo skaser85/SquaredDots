@@ -23,7 +23,7 @@ class Dropdown:
     hovered: bool = False
     anim_duration: int = 500
     anim_timer: int = 500
-    anim_speed: int = 50
+    anim_speed: int = 75
     hot_option: str = ''
     selected_value: str = ''
     transitioning: bool = False
@@ -89,37 +89,30 @@ class Dropdown:
         for opt in self.options:
             r = pygame.Rect(x, y, self.width, self.height)
             bkg_color = self.bkg_color
+
             if self._mouse_is_over(r, m):
-                self.hot_option = opt
-                hot_action = self.set_hot_option
-                bkg_color = Color.brighten(self.bkg_color, 0.5)
-            if self.transitioning:
-                if opening:
-                    if y <= view_top:
-                        pygame.draw.rect(surface, bkg_color.color, r)
-                        pygame.draw.rect(surface, self.text_color.color, r, 1)
-                        text = self.font.render(opt, True, self.text_color.color)
-                        tx = x + self.padding/2
-                        ty = y + self.padding/2 + th/2 - 2
-                        surface.blit(text, (tx, ty))
-                else:
-                    if y <= view_bottom:
-                        pygame.draw.rect(surface, bkg_color.color, r)
-                        pygame.draw.rect(surface, self.text_color.color, r, 1)
-                        text = self.font.render(opt, True, self.text_color.color)
-                        tx = x + self.padding/2
-                        ty = y + self.padding/2 + th/2 - 2
-                        surface.blit(text, (tx, ty))
+                if not self.transitioning and self.opened:
+                    self.hot_option = opt
+                    hot_action = self.set_hot_option
+                    bkg_color = Color.brighten(self.bkg_color, 0.5)
+                
+            if self.opened and not self.transitioning:
+                self.draw_option(surface, x, y, bkg_color, r, opt, th)
             else:
-                if self.opened:
-                    pygame.draw.rect(surface, bkg_color.color, r)
-                    pygame.draw.rect(surface, self.text_color.color, r, 1)
-                    text = self.font.render(opt, True, self.text_color.color)
-                    tx = x + self.padding/2
-                    ty = y + self.padding/2 + th/2 - 2
-                    surface.blit(text, (tx, ty))
+                if self.transitioning:
+                    check_val = view_top if opening else view_bottom
+                    if y <= check_val:
+                        self.draw_option(surface, x, y, bkg_color, r, opt, th)
             y += r.h
         return hot_action
+
+    def draw_option(self, surface: pygame.Surface, x: int, y: int, bkg_color: Color, r: pygame.Rect, opt: str, th: int) -> None:
+        pygame.draw.rect(surface, bkg_color.color, r)
+        pygame.draw.rect(surface, self.text_color.color, r, 1)
+        text = self.font.render(opt, True, self.text_color.color)
+        tx = x + self.padding/2
+        ty = y + self.padding/2 + th/2 - 2
+        surface.blit(text, (tx, ty))
 
     def _mouse_is_over(self, r: pygame.Rect, m: pygame.Vector2) -> bool:
         return r.collidepoint(m.x, m.y)
