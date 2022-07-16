@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum, auto
 import pygame
@@ -6,6 +7,12 @@ class FontUseType(Enum):
     DEFAULT = auto()
     MENU = auto()
     UI = auto()
+
+    @staticmethod
+    def get_by_name(name: str) -> FontUseType:
+        for t in FontUseType:
+            if t.name.upper() == name.upper():
+                return t
 
 @dataclass
 class _Font:

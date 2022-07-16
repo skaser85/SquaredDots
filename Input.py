@@ -2,19 +2,38 @@ from typing import Callable, Any
 import pygame
 from dataclasses import dataclass
 from colors import Colors, Color
+from Keyboard import Keyboard
 
-# Import pygame.locals for easier access to key coordinates
-from pygame.locals import (
-    K_BACKSPACE,
-    K_SPACE,
-    K_RETURN
-)
+@dataclass
+class Cursor:
+    height: int
+    anim_duration: int = 255
+    anim_timer: int = 255
+    anim_speed: int = 10
+    anim_start_color: Color = None
+    anim_target_color: Color = None
+
+    def draw(self, surface: pygame.Surface, x: int, y: int, cursor_color: Color, bkg_color: Color) -> None:
+        if self.anim_start_color == None or self.anim_target_color == None:
+            self.anim_start_color = cursor_color
+            self.anim_target_color = bkg_color
+        self.anim_timer -= self.anim_speed
+        self.anim_timer = max(self.anim_timer, 0)
+        if self.anim_timer == 0:
+            self.anim_timer = self.anim_duration
+            temp = Color.copy(self.anim_start_color)
+            self.anim_start_color = Color.copy(self.anim_target_color)
+            self.anim_target_color = temp
+        lerp_amt = self.anim_timer / self.anim_duration
+        c = Color.copy(self.anim_start_color).color.lerp(self.anim_target_color.color, lerp_amt)
+        pygame.draw.line(surface, c, (x, y), (x, self.height))
 
 @dataclass
 class Input:
     font: pygame.font.Font
     title: str
     text: str = ''
+    max_len: int = 20
     width: int = 150
     height: int = 30
     text_color: Color = Colors.WHITE
@@ -22,11 +41,10 @@ class Input:
     padding: int = 10
     hovered: bool = False
     active: bool = True
-    anim_duration: int = 255
-    anim_timer: int = 255
-    anim_speed: int = 10
-    anim_start_color: Color = None
-    anim_target_color: Color = None
+    cursor: Cursor = None
+    cursor_last_char_past: int = 0
+    move_left: bool = False
+    move_right: bool = False
 
     def draw(self, surface: pygame.Surface, x: int, y: int, m: pygame.Vector2) -> Callable|None:
         hot_action = None
@@ -40,7 +58,7 @@ class Input:
         
         tw, th = text.get_size()
         
-        if tw > self.width + self.padding * 2:
+        if tw > self.width - (self.padding * 2):
             self.width = tw + self.padding * 2
         
         r = pygame.Rect(x, y, self.width, self.height)
@@ -61,22 +79,17 @@ class Input:
         surface.blit(text, (tx, ty))
 
         if self.active:
-            cursor_x = tx if len(self.text) == 0 else tx + tw
-            cursor_x += 1
+            if self.cursor is None:
+                self.cursor = Cursor(r.bottom - self.padding/1.5)
+                self.cursor_last_char_past = len(self.text)
+            if len(self.text) == 0:
+                cursor_x = tx + self.padding / 2
+                self.cursor_last_char_past = 0
+            else:
+                _text = self.font.render(self.text[:self.cursor_last_char_past], True, self.text_color.color)
+                cursor_x = tx + _text.get_width()
             cursor_y = y + self.padding/1.5
-            if self.anim_start_color == None or self.anim_target_color == None:
-                self.anim_start_color = self.text_color
-                self.anim_target_color = bkg_color
-            self.anim_timer -= self.anim_speed
-            self.anim_timer = max(self.anim_timer, 0)
-            if self.anim_timer == 0:
-                self.anim_timer = self.anim_duration
-                temp = Color.copy(self.anim_start_color)
-                self.anim_start_color = Color.copy(self.anim_target_color)
-                self.anim_target_color = temp
-            lerp_amt = self.anim_timer / self.anim_duration
-            c = Color.copy(self.anim_start_color).color.lerp(self.anim_target_color.color, lerp_amt)
-            pygame.draw.line(surface, c, (cursor_x, cursor_y), (cursor_x, r.bottom - self.padding/1.5))
+            self.cursor.draw(surface, cursor_x, cursor_y, self.text_color, bkg_color)
 
         return hot_action
 
@@ -86,17 +99,28 @@ class Input:
     def set_active(self):
         self.active = True
 
-    def update_text(self, key: Any) -> str:
+    def update_text(self, kb: Keyboard) -> str:
         text = None
-        if key == K_BACKSPACE:
+        if kb.backspace:
             self.text = self.text[:-1]
-        elif key == K_SPACE:
+        elif kb.space:
             self.text += ' '
-        elif key == K_RETURN:
+            self.cursor_last_char_past += 1
+        elif kb.enter or kb.escape:
             if len(self.text) == 0:
                 return
             self.active = False
             text = self.text
+        elif kb.arrow.left:
+            if len(self.text) > 0:
+                if self.cursor_last_char_past > 0:
+                    self.cursor_last_char_past -= 1
+        elif kb.arrow.right:
+            if len(self.text) > 0:
+                if self.cursor_last_char_past < len(self.text):
+                    self.cursor_last_char_past += 1
         else:
-            self.text += key
+            if kb.key is not None and len(self.text) < self.max_len:
+                self.text += kb.key
+                self.cursor_last_char_past += 1
         return text

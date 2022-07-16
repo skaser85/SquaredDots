@@ -1,0 +1,58 @@
+{
+    "assetsPath": "C:\\Users\\sjk27\\Projects\\SquaredDots\\assets",
+    "backgroundColor": "DARK GREY",
+    "backgroundImagePath": "",
+    "fonts": {
+        "DEFAULT": {
+            "name": "kenvector_future_thin",
+            "type": "ttf",
+            "size": 28,
+            "sysFont": false
+        },
+        "MENU": {
+            "name": "kenvector_future_thin",
+            "type": "ttf",
+            "size": 28,
+            "sysFont": false
+        },
+        "UI": {
+            "name": "consolas",
+            "type": "ttf",
+            "size": 12,
+            "sysFont": true
+        }
+    },
+    "menus": [
+        {
+            "title": "main",
+            "items": [
+                {
+                    "title": "START GAME",
+                    "action": "start_game"
+                },
+                {
+                    "title": "QUIT GAME",
+                    "action": "quit_game"
+                }
+            ]
+        },
+        {
+            "title": "pause",
+            "items": [
+                {
+                    "title": "RESUME GAME",
+                    "action": "resume_game"
+                },
+                {
+                    "title": "RESTART GAME",
+                    "action": "restart_game"
+                },
+                {
+                    "title": "QUIT GAME",
+                    "action": "quit_game"
+                }
+            ]
+        }
+    ],
+    "startMenu": "main"
+}

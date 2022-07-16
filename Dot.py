@@ -9,7 +9,7 @@ class Dot:
     row: int
     col: int
     pos: pygame.Vector2
-    size: int = 10
+    size: int = 20
     color: Color = Colors.CYAN
     stroke_width: int = 1
     rect: pygame.Rect = None

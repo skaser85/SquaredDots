@@ -1,5 +1,7 @@
+import os
 from dataclasses import dataclass, field
-from typing import Any, Callable, List, Any
+from typing import Callable, List, Dict
+from json import loads
 import pygame
 from font import FontStore, FontUseType, _Font, _SysFont
 from Menu import Menu
@@ -8,6 +10,8 @@ from Board import Board
 from Player import InputData, Player
 from Input import Input
 from Dropdown import Dropdown, DropdownData
+from Keyboard import Keyboard
+from Mouse import Mouse
 
 @dataclass
 class Game:
@@ -35,11 +39,20 @@ class Game:
     _input: Input = None
     player_to_change: Player = None
     _color_names: List[str] = field(default_factory=list)
+    menu_actions: Dict[str, Callable] = field(default_factory=dict)
+    keyboard: Keyboard = None
+    mouse: Mouse = None
 
     def __post_init__(self):
         pygame.font.init()
         pygame.mixer.init()
         self._color_names = Colors.get_color_names()
+        self.menu_actions['start_game'] = self.start_game
+        self.menu_actions['quit_game'] = self.quit_game
+        self.menu_actions['resume_game'] = self.resume_game
+        self.menu_actions['restart_game'] = self.restart_game
+        self.keyboard = Keyboard()
+        self.mouse = Mouse()
 
     def set_menu(self, menu_name):
         self.menu = self.menus[menu_name]
@@ -122,7 +135,7 @@ class Game:
             self.screen.blit(self.background_image, (0, 0))
 
         self.hot_action = None
-        m = self.get_mouse_pos()
+        m = self.mouse.last_pos
 
         # if we're paused or the game hasn't started yet,
         # then update and draw the menu
@@ -138,13 +151,17 @@ class Game:
                 self.menu.reset()
                 self.menu.menu_item_hot = None
 
+            start_x = 35
             if self.board is None:
-                self.board = Board(35, 35, 30, 30, self.font_store.default.font)
+                start_y = 35
+                max_x = self.screen_width - (self.screen_width // 3)
+                max_y = self.screen_height - start_y
+                self.board = Board(start_x, start_y, max_x, max_y, self.font_store.default.font, self.background_color)
                 self.board.set_player(self.players[self.active_player_index])
             self.board.draw(self.screen)
         
             # draw players' text
-            x = self.screen_width - 200
+            x = self.board.rect.right + start_x
             y = 50
             for p in self.players:
                 action = p.draw(self.screen, x, y, self.font_store.ui.font, self.font_store.default.font, m)
@@ -158,24 +175,49 @@ class Game:
                 if action is not None:
                     self.hot_action = action
 
-    def update(self, key: Any = None):
+    def _clamp(self, val, minimum, maximum):
+        return max(minimum, min(val, maximum))
+
+    def update(self):
+        if self.mouse.left_down:
+            self.handle_click()
         if self.board is not None:
-            self.board.update(self.get_mouse_pos())
+            self.board.update(self.mouse.pos)
         if self._input is not None:
             if isinstance(self._input, Input):
-                if key is not None:
-                    text = self._input.update_text(key)
-                    if text is not None:
-                        self.player_to_change.name = text
-                        self.player_to_change = None
-                        self._input = None
+                text = self._input.update_text(self.keyboard)
+                if text is not None:
+                    self.player_to_change.name = text
+                    self.player_to_change = None
+                    self._input = None
+        else:
+            if self.keyboard.escape:
+                if self.paused:
+                    # testing
+                    self.running = False
+                    # live
+                    self.resume_game()
+                else:
+                    if self.game_started:
+                        self.pause_game()
+            elif self.keyboard.enter:
+                if self.menu.menu_item_hot is not None:
+                    self.menu.menu_item_hot.action()
+            elif self.keyboard.arrow.up:
+                if self.paused:
+                    self.menu.select_menu_item(-1)
+            elif self.keyboard.arrow.down:
+                if self.paused:
+                    self.menu.select_menu_item(1)
+        self.keyboard = Keyboard()
+        self.mouse = Mouse.next_frame(self.mouse)
     
     def handle_click(self):
         if self.hot_action is not None:
             value = self.hot_action()
             if isinstance(value, InputData):
                 if value.input_type == 'text':
-                    self._input = Input(self.font_store.ui.font, value.input_title, value.initial_value)
+                    self._input = Input(self.font_store.ui.font, value.input_title, value.initial_value, 10)
                     self.player_to_change = value.player
                 elif value.input_type == 'color':
                     self._input = Dropdown(self.font_store.ui.font, value.input_title, self._color_names)
@@ -202,6 +244,28 @@ class Game:
                 self.board.clear_available()
                 self.board.deselect_dot()
 
-    def get_mouse_pos(self) -> pygame.Vector2:
-        m = pygame.mouse.get_pos()
-        return pygame.Vector2(m[0], m[1])
+    def load_setup(self, setup_file_path: str) -> None:
+        with open(setup_file_path) as f:
+            data = loads(f.read())
+        # set background
+        if len(data['backgroundColor']) > 0:
+            self.set_background_color(Colors.get_color_by_name(data['backgroundColor']))
+        elif len(data['backgroundImagePath']) > 0:
+            self.register_background_image(data['backgroundImagePath'])
+        #set fonts
+        for font_type in data['fonts']:
+            font = data['fonts'][font_type]
+            font_use_type = FontUseType.get_by_name(font_type)
+            if font['sysFont']:
+                self.register_sys_font(font['name'], font['size'], font_use_type)
+            else:
+                self.register_font(os.path.join(data['assetsPath'], 'Fonts', f'{font["name"]}.ttf'), font['size'], font_use_type)
+        # set menus
+        for menu in data['menus']:
+            self.create_menu(menu['title'])
+            for item in menu['items']:
+                action = None
+                if item['action'] in self.menu_actions:
+                    action = self.menu_actions[item['action']]
+                self.menus[menu['title']].add_menu_item(item['title'], action)
+        self.set_menu(data['startMenu'])

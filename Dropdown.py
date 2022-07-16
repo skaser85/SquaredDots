@@ -91,6 +91,10 @@ class Dropdown:
             bkg_color = self.bkg_color
 
             if self._mouse_is_over(r, m):
+                # this check is here so that the Dropdown won't pick up on
+                # whether we're hovering over something while in transition - 
+                # this is done so that we can't set an option hot while the 
+                # Dropdown is opening or closing - which causes weirdness
                 if not self.transitioning and self.opened:
                     self.hot_option = opt
                     hot_action = self.set_hot_option

@@ -1,12 +1,12 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple
 import pygame
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from colors import Colors, Color
 from Dot import Dot
 from Edge import Edge, Direction
 from Square import Square
 from Player import Player
+from colors import Colors, Color
 
 class Sides(Enum):
     TOP = auto()
@@ -18,9 +18,12 @@ class Sides(Enum):
 class Board:
     start_x: int
     start_y: int
-    dots_x: int
-    dots_y: int
+    max_x: int
+    max_y: int
     font: pygame.font.Font
+    color: Color
+    dots_x: int = 0
+    dots_y: int = 0
     padding: int = 20
     dots: List[Dot] = field(default_factory=list)
     hot_dot: Dot = None
@@ -29,8 +32,20 @@ class Board:
     edges: List[Edge] = field(default_factory=list)
     squares: List[Square] = field(default_factory=list)
     player: Player = None
+    rect: pygame.Rect = None
+    is_hot: bool = False
 
     def __post_init__(self):
+        self.dots_x = 0
+        while (self.start_x + (self.dots_x * Dot.size) + (self.dots_x * self.padding) - self.padding) <= self.max_x:
+            self.dots_x += 1
+        self.dots_y = 0
+        while (self.start_y + (self.dots_y * Dot.size) + (self.dots_y * self.padding) - self.padding) <= self.max_y:
+            self.dots_y += 1
+        board_start_x = self.start_x - self.padding
+        board_start_y = self.start_y - self.padding
+        board_end_x = 0
+        board_end_y = 0
         dx = self.start_x
         dy = self.start_y
         index = 0
@@ -40,9 +55,17 @@ class Board:
                 index += 1
                 dx += (self.padding + self.dots[0].size)
             dy += (self.padding + self.dots[0].size)
+            if board_end_x == 0:
+                board_end_x = dx
             dx = self.start_x
+        board_end_y = dy
+        self.rect = pygame.Rect(board_start_x, board_start_y, board_end_x - board_start_x, board_end_y - board_start_y)
 
     def draw(self, surface: pygame.surface):
+        c = self.color
+        if self.is_hot:
+            c = c.brighten(c, 0.1)
+        pygame.draw.rect(surface, c.color, self.rect)
         for dot in self.dots:
             dot.draw(surface)
         for edge in self.edges:
@@ -51,6 +74,7 @@ class Board:
             square.draw(surface)
 
     def update(self, m: pygame.Vector2):
+        self.is_hot = self.rect.collidepoint(m.x, m.y)
         self.hot_dot = None
         for dot in self.dots:
             dot.update(m)
