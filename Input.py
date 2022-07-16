@@ -3,6 +3,7 @@ import pygame
 from dataclasses import dataclass
 from colors import Colors, Color
 from Keyboard import Keyboard
+from _math import Vec2
 
 @dataclass
 class Cursor:
@@ -46,7 +47,7 @@ class Input:
     move_left: bool = False
     move_right: bool = False
 
-    def draw(self, surface: pygame.Surface, x: int, y: int, m: pygame.Vector2) -> Callable|None:
+    def draw(self, surface: pygame.Surface, x: int, y: int, m: Vec2) -> Callable|None:
         hot_action = None
 
         title = self.font.render(self.title, True, self.text_color.color)
@@ -93,7 +94,7 @@ class Input:
 
         return hot_action
 
-    def _mouse_is_over(self, r: pygame.Rect, m: pygame.Vector2) -> bool:
+    def _mouse_is_over(self, r: pygame.Rect, m: Vec2) -> bool:
         return r.collidepoint(m.x, m.y)
 
     def set_active(self):

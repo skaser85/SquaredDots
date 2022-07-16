@@ -2,6 +2,7 @@ from typing import Callable, List
 import pygame
 from dataclasses import dataclass, field
 from colors import Colors, Color
+from _math import Vec2
 
 def lerp(a: float, b: float, f: float) -> float:
     return a + f * (b - a)
@@ -32,7 +33,7 @@ class Dropdown:
     def __post_init__(self):
         self.selected_value = self.options[0]
 
-    def draw(self, surface: pygame.Surface, x: int, y: int, m: pygame.Vector2) -> Callable|None:
+    def draw(self, surface: pygame.Surface, x: int, y: int, m: Vec2) -> Callable|None:
         hot_action = None
 
         title = self.font.render(self.title, True, self.text_color.color)
@@ -85,7 +86,7 @@ class Dropdown:
 
         return hot_action
 
-    def draw_options(self, opening: bool, surface: pygame.Surface, x: int, y: int, m: pygame.Vector2, view_top: int, view_bottom: int, th: int, hot_action: Callable) -> Callable:
+    def draw_options(self, opening: bool, surface: pygame.Surface, x: int, y: int, m: Vec2, view_top: int, view_bottom: int, th: int, hot_action: Callable) -> Callable:
         for opt in self.options:
             r = pygame.Rect(x, y, self.width, self.height)
             bkg_color = self.bkg_color
@@ -118,7 +119,7 @@ class Dropdown:
         ty = y + self.padding/2 + th/2 - 2
         surface.blit(text, (tx, ty))
 
-    def _mouse_is_over(self, r: pygame.Rect, m: pygame.Vector2) -> bool:
+    def _mouse_is_over(self, r: pygame.Rect, m: Vec2) -> bool:
         return r.collidepoint(m.x, m.y)
 
     def set_value(self, value: str) -> None:

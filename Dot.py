@@ -2,13 +2,14 @@ from math import sqrt
 import pygame
 from dataclasses import dataclass
 from colors import Colors, Color
+from _math import Vec2
 
 @dataclass
 class Dot:
     index: int
     row: int
     col: int
-    pos: pygame.Vector2
+    pos: Vec2
     size: int = 20
     color: Color = Colors.CYAN
     stroke_width: int = 1
@@ -44,13 +45,10 @@ class Dot:
             pygame.draw.ellipse(screen, Colors.PINK.color, self.rect, 0)
         pygame.draw.ellipse(screen, self.color.color, self.rect, self.stroke_width)
 
-    def update(self, m: pygame.Vector2):
+    def update(self, m: Vec2):
         self.hovered = self._mouse_is_over(m)
 
-    def _mouse_is_over(self, m: pygame.Vector2):
-        pos = pygame.Vector2(self.rect.center[0], self.rect.center[1])
-        d = sqrt(pos.distance_squared_to(m))
+    def _mouse_is_over(self, m: Vec2):
+        pos = Vec2(self.rect.center[0], self.rect.center[1])
+        d = Vec2._dist(m, pos)
         return d < self.size/2
-
-    def _clamp(self, val, minimum, maximum):
-        return max(minimum, min(val, maximum))

@@ -2,6 +2,7 @@ import pygame
 from dataclasses import dataclass
 from Edge import Edge
 from Player import Player
+from _math import Vec2
 
 @dataclass
 class Square:
@@ -17,8 +18,8 @@ class Square:
     def __post_init__(self):
         left = self.top.dot0.rect.centerx
         top = self.top.dot0.rect.centery
-        d0 = pygame.Vector2(self.top.dot0.rect.centerx, self.top.dot0.rect.centery)
-        d1 = pygame.Vector2(self.top.dot1.rect.centerx, self.top.dot1.rect.centery)
+        d0 = Vec2(self.top.dot0.rect.centerx, self.top.dot0.rect.centery)
+        d1 = Vec2(self.top.dot1.rect.centerx, self.top.dot1.rect.centery)
         size = d0.distance_to(d1)
         self.rect = pygame.Rect(left, top, size, size)
 

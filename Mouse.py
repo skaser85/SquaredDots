@@ -1,11 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Tuple
-import pygame
+from _math import Vec2
 
 @dataclass
 class Mouse:
-    pos: pygame.Vector2 = None
+    pos: Vec2 = None
     left_down: bool = False
     right_down: bool = False
     middle_down: bool = False
@@ -13,7 +13,7 @@ class Mouse:
     scrolled_down: bool = False
     scrolled_amt_x: int = 0
     scrolled_amt_y: int = 0
-    last_pos: pygame.Vector2 = None
+    last_pos: Vec2 = None
 
     @staticmethod
     def next_frame(pm: Mouse = None) -> Mouse:

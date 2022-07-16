@@ -7,6 +7,7 @@ from Edge import Edge, Direction
 from Square import Square
 from Player import Player
 from colors import Colors, Color
+from _math import Vec2
 
 class Sides(Enum):
     TOP = auto()
@@ -51,7 +52,7 @@ class Board:
         index = 0
         for r in range(self.dots_y):
             for c in range(self.dots_x):
-                self.dots.append(Dot(index, r, c, pygame.Vector2(dx, dy)))
+                self.dots.append(Dot(index, r, c, Vec2(dx, dy)))
                 index += 1
                 dx += (self.padding + self.dots[0].size)
             dy += (self.padding + self.dots[0].size)
@@ -73,7 +74,7 @@ class Board:
         for square in self.squares:
             square.draw(surface)
 
-    def update(self, m: pygame.Vector2):
+    def update(self, m: Vec2):
         self.is_hot = self.rect.collidepoint(m.x, m.y)
         self.hot_dot = None
         for dot in self.dots:

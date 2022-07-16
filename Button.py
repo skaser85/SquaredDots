@@ -3,6 +3,7 @@ from typing import Callable, Tuple
 import pygame
 from dataclasses import dataclass
 from colors import Colors, Color
+from _math import Vec2
 
 @dataclass
 class Button:
@@ -16,7 +17,7 @@ class Button:
     rect: pygame.Rect = None
     hovered: bool = False
 
-    def draw(self, surface: pygame.Surface, x: int, y: int, m: pygame.Vector2):
+    def draw(self, surface: pygame.Surface, x: int, y: int, m: Vec2):
         text = self.font.render(self.text, True, self.text_color.color)
         tw, th = text.get_size()
         tx = x
@@ -38,5 +39,5 @@ class Button:
             ty = y + self.padding
         surface.blit(text, (tx, ty))
 
-    def _mouse_is_over(self, r: pygame.Rect, m: pygame.Vector2) -> bool:
+    def _mouse_is_over(self, r: pygame.Rect, m: Vec2) -> bool:
         return r.collidepoint(m.x, m.y)

@@ -2,6 +2,7 @@ from typing import List, Callable
 from dataclasses import dataclass, field
 import pygame
 from colors import Colors, Color
+from _math import Vec2
 
 @dataclass
 class MenuItem():
@@ -55,7 +56,7 @@ class Menu():
         self.menu_item_hot = self.menu_items[self.menu_item_hot_index]
         self.menu_item_hot.is_hot = True
     
-    def draw(self, surface: pygame.Surface, m: pygame.Vector2) -> Callable|None:
+    def draw(self, surface: pygame.Surface, m: Vec2) -> Callable|None:
         hot_action = None
         
         screen_width, screen_height = surface.get_size()
@@ -108,5 +109,5 @@ class Menu():
 
         return hot_action
 
-    def _mouse_is_over(self, r: pygame.Rect, m: pygame.Vector2) -> bool:
+    def _mouse_is_over(self, r: pygame.Rect, m: Vec2) -> bool:
         return r.collidepoint(m.x, m.y)

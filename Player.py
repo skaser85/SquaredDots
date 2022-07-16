@@ -4,6 +4,7 @@ import pygame
 from dataclasses import dataclass
 from colors import Color
 from Button import Button
+from _math import Vec2
 
 @dataclass
 class InputData:
@@ -19,7 +20,7 @@ class Player:
     score: int = 0
     active: bool = False
 
-    def draw(self, surface: pygame.Surface, x: int, y: int, ui_font: pygame.font.Font, default_font: pygame.font.Font, m: pygame.Vector2) -> Callable|None:
+    def draw(self, surface: pygame.Surface, x: int, y: int, ui_font: pygame.font.Font, default_font: pygame.font.Font, m: Vec2) -> Callable|None:
         hot_action = None
         # draw dot to show if it's this player's turn
         if self.active:

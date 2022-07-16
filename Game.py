@@ -175,9 +175,6 @@ class Game:
                 if action is not None:
                     self.hot_action = action
 
-    def _clamp(self, val, minimum, maximum):
-        return max(minimum, min(val, maximum))
-
     def update(self):
         if self.mouse.left_down:
             self.handle_click()
