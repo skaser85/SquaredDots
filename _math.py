@@ -42,6 +42,14 @@ class Vec2:
         """
         return math.sqrt(self.mag_sq())
 
+    def dist(self, v: Vec2) -> float:
+        """
+        Returns the distance between self and the passed-in vectors
+        """
+        r = Vec2._copy(self)
+        r.sub(v)
+        return r.mag()
+
     @staticmethod
     def _add(v1: Vec2, v2: Vec2) -> Vec2:
         v = Vec2(v1.x, v1.y)

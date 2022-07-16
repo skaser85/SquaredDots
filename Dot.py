@@ -50,5 +50,5 @@ class Dot:
 
     def _mouse_is_over(self, m: Vec2):
         pos = Vec2(self.rect.center[0], self.rect.center[1])
-        d = Vec2._dist(m, pos)
+        d = pos.dist(m)
         return d < self.size/2
