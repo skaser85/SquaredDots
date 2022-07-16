@@ -69,4 +69,5 @@ class Keyboard:
         elif key == K_LEFT:
             self.arrow.left = True
         else:
-            self.key = key_unicode
+            if (key > 64 and key < 91) or (key > 96 and key < 123):
+                self.key = key_unicode

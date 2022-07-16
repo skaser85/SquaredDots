@@ -79,7 +79,7 @@ class Game:
         elif font_use_type == FontUseType.MENU:
             self.font_store.menu = _Font(path, size)
         elif font_use_type == FontUseType.UI:
-            self.font_store.ui == _Font(path, size)
+            self.font_store.ui = _Font(path, size)
         else:
             raise ValueError(f'Unknown font_use_type: {font_use_type}')
 

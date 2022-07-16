@@ -16,10 +16,10 @@
             "sysFont": false
         },
         "UI": {
-            "name": "consolas",
+            "name": "Righteous-Regular",
             "type": "ttf",
             "size": 12,
-            "sysFont": true
+            "sysFont": false
         }
     },
     "menus": [
