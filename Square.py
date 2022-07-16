@@ -20,7 +20,7 @@ class Square:
         top = self.top.dot0.rect.centery
         d0 = Vec2(self.top.dot0.rect.centerx, self.top.dot0.rect.centery)
         d1 = Vec2(self.top.dot1.rect.centerx, self.top.dot1.rect.centery)
-        size = d0.distance_to(d1)
+        size = d0.dist(d1)
         self.rect = pygame.Rect(left, top, size, size)
 
     def draw(self, surface: pygame.surface):

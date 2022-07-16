@@ -29,12 +29,16 @@ class Dropdown:
     selected_value: str = ''
     transitioning: bool = False
     opened: bool = False
+    max_open_amt: int = 100
 
     def __post_init__(self):
         self.selected_value = self.options[0]
 
     def draw(self, surface: pygame.Surface, x: int, y: int, m: Vec2) -> Callable|None:
         hot_action = None
+
+        if y + self.max_open_amt > surface.get_height():
+            self.max_open_amt = surface.get_height() - 5
 
         title = self.font.render(self.title, True, self.text_color.color)
         surface.blit(title, (x, y))

@@ -22,6 +22,15 @@ class Mouse:
             m.last_pos = pm.pos
         return m
 
+    def get_offset_from_last_frame(self) -> Vec2:
+        p = self.pos.copy()
+        p.sub(self.last_pos)
+        return p
+
+    def update(self, pos: Tuple[int], pressed: Tuple[bool]) -> None:
+        self.pos = Vec2(pos[0], pos[1])
+        self.set_pressed(pressed)
+
     def set_pressed(self, pressed: Tuple[bool]) -> None:
         self.left_down = pressed[0]
         self.right_down = pressed[1]

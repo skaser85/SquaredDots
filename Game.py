@@ -104,13 +104,6 @@ class Game:
         self.game_started = True
         self.paused = False
         self.game_has_run_once = True
-        p1 = Player('Bilbo', Colors.PURPLE)
-        self.players.append(p1)
-        p2 = Player('Gollum', Colors.YELLOW)
-        self.players.append(p2)
-        p3 = Player('Merry', Colors.CYAN)
-        self.players.append(p3)
-        p1.active = True
 
     def quit_game(self):
         self.running = False
@@ -266,3 +259,9 @@ class Game:
                     action = self.menu_actions[item['action']]
                 self.menus[menu['title']].add_menu_item(item['title'], action)
         self.set_menu(data['startMenu'])
+        # add players
+        for i, player in enumerate(data['players']):
+            p = Player(player['name'], Colors.get_color_by_name(player['color']))
+            if i == 0:
+                p.active = True
+            self.players.append(p)

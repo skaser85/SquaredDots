@@ -1,14 +1,13 @@
+import pygame
 from pygame.constants import RESIZABLE, VIDEORESIZE, MOUSEWHEEL
 from pygame.locals import KEYDOWN, QUIT
 from Game import Game
-import pygame
-from _math import Vec2
 
 pygame.init()
 clock = pygame.time.Clock()
 
-gameWidth = 800
-gameHeight = 600
+gameWidth = 1200
+gameHeight = 960
 game = Game(gameWidth, gameHeight)
 game.screen = pygame.display.set_mode((gameWidth, gameHeight),RESIZABLE)
 game.load_setup("setup.json")
@@ -27,9 +26,7 @@ while game.running:
         elif event.type == QUIT:
             game.running = False
 
-    pos = pygame.mouse.get_pos()
-    game.mouse.pos = Vec2(pos[0], pos[1])
-    game.mouse.set_pressed(pygame.mouse.get_pressed(5))
+    game.mouse.update(pygame.mouse.get_pos(), pygame.mouse.get_pressed(5))
     game.update()
     game.draw()
 

@@ -54,5 +54,23 @@
             ]
         }
     ],
-    "startMenu": "main"
+    "startMenu": "main",
+    "players": [
+        {
+            "name": "Bilbo",
+            "color": "purple"
+        },
+        {
+            "name": "Gollum",
+            "color": "yellow"
+        },
+        {
+            "name": "Merry",
+            "color": "cyan"
+        },
+        {
+            "name": "Gandalf",
+            "color": "grey"
+        }
+    ]
 }
