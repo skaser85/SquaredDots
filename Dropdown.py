@@ -133,6 +133,8 @@ class Dropdown:
             raise ValueError(f'Value "{value}" is not a valid option!')
 
     def set_active(self):
+        if self.transitioning:
+            return
         self.opened = not self.opened
         self.transitioning = not self.transitioning
 
